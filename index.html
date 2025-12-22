@@ -3,68 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Timesheet 2026</title>
-    <!-- 1. Load React and ReactDOM (Stable Production Build) -->
+    <title>Dentist Timesheet Cloud</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- 2. Load Babel for Standalone JSX Execution -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- 3. Tailwind CSS for Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap');
-        body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
+        body { font-family: 'Sarabun', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .animate-scale-in { animation: scale-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes bounce-in { 0% { transform: translate(-50%, 20px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
-        .animate-bounce-in { animation: bounce-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        /** @jsx React.createElement */
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // --- Custom Inline SVG Icons (Replacing Lucide to fix loading errors) ---
-        const Icon = ({ size = 24, stroke = "currentColor", strokeWidth = 2, children, ...props }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" {...props}>
-                {children}
-            </svg>
-        );
+        // *** ใส่ URL ของคุณที่นี่ ***
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBGCAtzlEzAeUPjGpD0eejUxNj2BZ0zuOxnEz6rNjdq-W5MMPkK4aWRHieY2voUk87-g/exec";
 
-        const Icons = {
-            Download: (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>,
-            Trash2: (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>,
-            Calendar: (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Icon>,
-            ClipboardCheck: (p) => <Icon {...p}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><polyline points="9 14 11 16 15 12"/></Icon>,
-            FileSpreadsheet: (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></Icon>,
-            MapPin: (p) => <Icon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></Icon>,
-            Globe: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></Icon>,
-            User: (p) => <Icon {...p}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>,
-            ArrowDown: (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></Icon>,
-            Lock: (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></Icon>,
-            LockOpen: (p) => <Icon {...p}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></Icon>,
-            Users: (p) => <Icon {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>,
-            LogOut: (p) => <Icon {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></Icon>,
-            ChevronRight: (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"/></Icon>,
-            ShieldCheck: (p) => <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></Icon>,
-            Key: (p) => <Icon {...p}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L17 4"/></Icon>,
-            CheckCircle2: (p) => <Icon {...p}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></Icon>
-        };
-
-        // --- Data Configuration ---
         const EMPLOYEES = ["หมอเบ็น", "หมอเบส", "หมออ๊อด", "หมอผิง", "หมอปุ้ม", "หมอตุล", "หมอท็อป", "หมอขิง", "หมอนัชชี่", "หมอป้อม"];
         const ADMIN_PASSWORD = "88888888";
-        const STORAGE_KEY = 'work_timesheet_standalone_v12_final';
-        const USER_KEY = 'work_timesheet_current_user_v12';
-
+        
         const TABS_CONFIG = [
             { label: "ธ.ค. 68", month: 11, year: 2025 },
             { label: "ม.ค. 69", month: 0, year: 2026 }, { label: "ก.พ. 69", month: 1, year: 2026 },
@@ -75,308 +36,149 @@
             { label: "พ.ย. 69", month: 10, year: 2026 }, { label: "ธ.ค. 69", month: 11, year: 2026 }
         ];
 
-        const MONTHS_FULL = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-        const DAYS_TH = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+        // --- ระบบ Icons แบบง่าย ---
+        const IconMapPin = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+        const IconGlobe = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
 
         const App = () => {
-            const [identifiedUser, setIdentifiedUser] = useState(null);
-            const [isAdmin, setIsAdmin] = useState(false);
-            const [activeTabIndex, setActiveTabIndex] = useState(0);
-            const [showOverview, setShowOverview] = useState(false);
-            const [isEditMode, setIsEditMode] = useState(false);
+            const [user, setUser] = useState(localStorage.getItem('user'));
+            const [isAdmin, setIsAdmin] = useState(user === 'Admin');
             const [attendance, setAttendance] = useState({});
-            const [isLoaded, setIsLoaded] = useState(false);
-            const [showConfirmReset, setShowConfirmReset] = useState(false);
-            const [toast, setToast] = useState(null);
-            const [isSaving, setIsSaving] = useState(false);
-            const [adminAuthInput, setAdminAuthInput] = useState("");
-            const [isEnteringAdminPass, setIsEnteringAdminPass] = useState(false);
+            const [isEditMode, setIsEditMode] = useState(false);
+            const [activeTab, setActiveTab] = useState(1); // มกราคม 2569
+            const [loading, setLoading] = useState(false);
 
-            const activeTab = TABS_CONFIG[activeTabIndex];
-
-            const scrollToToday = () => {
-                const now = new Date();
-                const todayKey = `row-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
-                setTimeout(() => {
-                    const element = document.getElementById(todayKey);
-                    if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }, 600);
-            };
-
+            // ดึงข้อมูลจาก Google Sheets ครั้งแรก
             useEffect(() => {
-                const savedUser = localStorage.getItem(USER_KEY);
-                if (savedUser) {
-                    if (savedUser === 'Admin') {
-                        setIdentifiedUser('Admin');
-                        setIsAdmin(true);
-                        setShowOverview(true);
-                    } else if (EMPLOYEES.includes(savedUser)) {
-                        setIdentifiedUser(savedUser);
-                    }
-                }
-
-                const savedData = localStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    try { setAttendance(JSON.parse(savedData)); } catch (e) { console.error(e); }
-                }
-
-                const now = new Date();
-                const foundIndex = TABS_CONFIG.findIndex(t => t.month === now.getMonth() && t.year === now.getFullYear());
-                if (foundIndex !== -1) setActiveTabIndex(foundIndex);
-
-                setIsLoaded(true);
-                if (savedUser) scrollToToday();
+                fetchData();
             }, []);
 
-            useEffect(() => {
-                if (isLoaded) {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(attendance));
-                    setIsSaving(true);
-                    const timer = setTimeout(() => setIsSaving(false), 800);
-                    return () => clearTimeout(timer);
-                }
-            }, [attendance, isLoaded]);
-
-            const showToast = (message) => {
-                setToast(message);
-                setTimeout(() => setToast(null), 3000);
+            const fetchData = async () => {
+                try {
+                    const res = await fetch(GOOGLE_SCRIPT_URL);
+                    const data = await res.json();
+                    // แปลงข้อมูลจาก Sheet กลับเป็น Object { dateKey: { empName: status } }
+                    const formatted = {};
+                    data.slice(1).forEach(row => {
+                        const [ts, dateKey, emp, status] = row;
+                        if (!formatted[dateKey]) formatted[dateKey] = {};
+                        formatted[dateKey][emp] = status === "null" ? null : status;
+                    });
+                    setAttendance(formatted);
+                } catch (e) { console.error("Load error:", e); }
             };
 
-            const handleIdentify = (name) => {
-                setIdentifiedUser(name);
-                setIsAdmin(false);
-                localStorage.setItem(USER_KEY, name);
-                showToast(`ยินดีต้อนรับ ${name}`);
+            const handleToggle = async (dateKey, emp) => {
+                if (!isEditMode) return alert("โปรดกด Unlock ก่อนแก้ไข");
+                if (!isAdmin && user !== emp) return alert("แก้ไขได้เฉพาะของตนเอง");
+
+                const currentStatus = attendance[dateKey]?.[emp];
+                let nextStatus = null;
+                if (!currentStatus) nextStatus = 'onsite';
+                else if (currentStatus === 'onsite') nextStatus = 'online';
+
+                // อัปเดต UI ทันที (Optimistic Update)
+                const newAttendance = { ...attendance, [dateKey]: { ...(attendance[dateKey] || {}), [emp]: nextStatus } };
+                setAttendance(newAttendance);
+
+                // ส่งไป Google Sheets
+                setLoading(true);
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', // จำเป็นสำหรับ Apps Script
+                        body: JSON.stringify({ dateKey, employee: emp, status: String(nextStatus) })
+                    });
+                } catch (e) { console.error("Save error:", e); }
+                setLoading(false);
             };
 
-            const handleAdminLogin = () => {
-                if (adminAuthInput === ADMIN_PASSWORD) {
-                    setIdentifiedUser('Admin');
-                    setIsAdmin(true);
-                    setShowOverview(true);
-                    localStorage.setItem(USER_KEY, 'Admin');
-                    setIsEnteringAdminPass(false);
-                    setAdminAuthInput("");
-                    showToast("โหมด Admin");
-                } else {
-                    showToast("รหัสผ่านผิด");
-                }
-            };
-
-            const handleLogout = () => {
-                setIdentifiedUser(null);
-                setIsAdmin(false);
-                localStorage.removeItem(USER_KEY);
-                setIsEditMode(false);
-                setShowOverview(false);
-                setIsEnteringAdminPass(false);
-            };
-
-            const handleToggle = (dateKey, emp) => {
-                if (!isEditMode) {
-                    showToast("กด Unlock เพื่อแก้ไข");
-                    return;
-                }
-                if (!isAdmin && identifiedUser !== emp) {
-                    showToast("แก้ไขได้เฉพาะของตัวเอง");
-                    return;
-                }
-                setAttendance(prev => {
-                    const currentStatus = prev[dateKey]?.[emp];
-                    let nextStatus = null;
-                    if (!currentStatus) nextStatus = 'onsite';
-                    else if (currentStatus === 'onsite') nextStatus = 'online';
-                    else nextStatus = null;
-                    return { ...prev, [dateKey]: { ...(prev[dateKey] || {}), [emp]: nextStatus } };
-                });
-            };
-
-            const exportToCSV = () => {
-                let csvContent = "\uFEFF";
-                csvContent += "วันที่,ปี,วัน," + EMPLOYEES.join(",") + ",หมายเหตุ\n";
-                TABS_CONFIG.forEach(tab => {
-                    const days = new Date(tab.year, tab.month + 1, 0).getDate();
-                    for (let d = 1; d <= days; d++) {
-                        const date = new Date(tab.year, tab.month, d);
-                        const dateKey = `${tab.year}-${tab.month}-${d}`;
-                        let row = [`${d} ${MONTHS_FULL[tab.month]}`, tab.year, DAYS_TH[date.getDay()]];
-                        EMPLOYEES.forEach(emp => {
-                            const status = attendance[dateKey]?.[emp];
-                            row.push(status ? (status === 'onsite' ? "Onsite" : "Online") : "ไม่เข้า");
-                        });
-                        row.push(date.getDay() === 5 ? "Weekly Meeting" : "");
-                        csvContent += row.join(",") + "\n";
-                    }
-                });
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = `Timesheet_Export.csv`;
-                link.click();
-            };
-
-            const daysData = useMemo(() => {
-                const days = [];
-                const count = new Date(activeTab.year, activeTab.month + 1, 0).getDate();
-                const now = new Date();
-                for (let i = 1; i <= count; i++) {
-                    const date = new Date(activeTab.year, activeTab.month, i);
-                    const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-                    days.push({ day: i, dayOfWeek: date.getDay(), dayName: DAYS_TH[date.getDay()], dateKey: `${activeTab.year}-${activeTab.month}-${i}`, isToday });
-                }
-                return days;
-            }, [activeTabIndex, activeTab]);
-
-            const displayedEmployees = showOverview ? EMPLOYEES : [identifiedUser];
-
-            if (!identifiedUser) {
+            if (!user) {
                 return (
-                    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-                        <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-in">
-                            <div className="bg-slate-800 p-10 text-center text-white relative">
-                                <div className="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-xl rotate-3">
-                                    <Icons.ClipboardCheck size={40} />
-                                </div>
-                                <h1 className="text-2xl font-black tracking-tight mb-2 italic">Work Timesheet</h1>
-                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest leading-none">กรุณาเลือกชื่อผู้ใช้งาน</p>
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 p-4">
+                        <div className="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+                            <h1 className="text-2xl font-black mb-6 text-center">เลือกรายชื่อผู้ใช้งาน</h1>
+                            <div className="grid grid-cols-2 gap-3">
+                                {EMPLOYEES.map(e => (
+                                    <button key={e} onClick={() => { setUser(e); localStorage.setItem('user', e); }} className="p-4 bg-slate-50 hover:bg-blue-500 hover:text-white font-bold rounded-2xl transition-all">{e}</button>
+                                ))}
                             </div>
-                            {!isEnteringAdminPass ? (
-                                <div className="p-6">
-                                    <div className="grid grid-cols-2 gap-3 mb-6">
-                                        {EMPLOYEES.map(emp => (
-                                            <button key={emp} onClick={() => handleIdentify(emp)} className="flex items-center justify-between p-4 rounded-2xl border-2 border-slate-50 bg-slate-50/50 hover:border-blue-500 hover:bg-blue-50 transition-all text-left group">
-                                                <span className="font-bold text-slate-700 group-hover:text-blue-700 truncate mr-2">{emp}</span>
-                                                <Icons.ChevronRight size={16} className="text-slate-300 group-hover:text-blue-400 shrink-0" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button onClick={() => setIsEnteringAdminPass(true)} className="w-full flex items-center justify-center gap-2 p-5 bg-slate-100 rounded-2xl text-slate-500 font-black hover:bg-slate-800 hover:text-white transition-all uppercase text-[10px] tracking-widest"><Icons.ShieldCheck size={16} /> Administrator</button>
-                                </div>
-                            ) : (
-                                <div className="p-10">
-                                    <div className="text-center mb-8"><div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><Icons.Key size={32} /></div><h2 className="text-xl font-black text-slate-800 uppercase leading-none mb-2">Admin Access</h2><p className="text-slate-400 text-xs">ระบุรหัสผ่านแอดมิน</p></div>
-                                    <input type="password" value={adminAuthInput} onChange={(e) => setAdminAuthInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleAdminLogin()} placeholder="••••••••" autoFocus className="w-full p-5 bg-slate-50 border-2 border-slate-200 rounded-3xl mb-6 text-center text-2xl font-bold tracking-[0.5em] focus:outline-none focus:border-blue-500 focus:bg-white transition-all" />
-                                    <div className="flex gap-3"><button onClick={() => setIsEnteringAdminPass(false)} className="flex-1 py-4 text-slate-400 font-bold">ยกเลิก</button><button onClick={handleAdminLogin} className="flex-[2] py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg active:scale-95 transition-transform">เข้าสู่ระบบ</button></div>
-                                </div>
-                            )}
+                            <button onClick={() => {
+                                const p = prompt("ใส่รหัส Admin");
+                                if(p === ADMIN_PASSWORD) { setUser('Admin'); setIsAdmin(true); localStorage.setItem('user', 'Admin'); }
+                            }} className="w-full mt-6 p-4 text-slate-400 font-bold uppercase text-xs tracking-widest">Admin Access</button>
                         </div>
                     </div>
                 );
             }
 
             return (
-                <div className="min-h-screen bg-slate-50 pb-10">
-                    <header className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center px-2">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-2.5 rounded-2xl ${isAdmin ? 'bg-amber-500 shadow-amber-500/30' : 'bg-blue-600 shadow-blue-500/20'} shadow-lg`}>
-                                    {isAdmin ? <Icons.ShieldCheck size={20} /> : <Icons.User size={20} />}
-                                </div>
-                                <div><p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none mb-1">{isAdmin ? 'ADMIN' : 'DOCTOR'}</p><h1 className="text-sm font-black leading-none">{isAdmin ? 'ADMINISTRATOR' : identifiedUser}</h1></div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={exportToCSV} className="p-2.5 rounded-xl bg-emerald-600 text-white shadow-lg"><Icons.FileSpreadsheet size={18} /></button>
-                                <button onClick={handleLogout} className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white transition-all border border-rose-500/20"><Icons.LogOut size={18} /></button>
-                            </div>
+                <div className="min-h-screen pb-20">
+                    <header className="bg-slate-900 text-white p-6 sticky top-0 z-50 flex justify-between items-center shadow-xl">
+                        <div>
+                            <p className="text-[10px] text-blue-400 font-black tracking-widest">LOGGED IN AS</p>
+                            <h2 className="text-xl font-black uppercase">{user}</h2>
                         </div>
+                        <button onClick={() => { localStorage.clear(); location.reload(); }} className="text-xs bg-rose-500/20 text-rose-400 px-4 py-2 rounded-xl border border-rose-500/30 font-bold">LOGOUT</button>
                     </header>
 
-                    <main className="max-w-7xl mx-auto p-3 md:p-6">
-                        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                            <div className="overflow-x-auto no-scrollbar w-full sm:w-auto pb-2 sm:pb-0">
-                                <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-200 min-w-max">
-                                    {TABS_CONFIG.map((tab, idx) => (
-                                        <button key={`${tab.month}-${tab.year}`} onClick={() => setActiveTabIndex(idx)} className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTabIndex === idx ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>{tab.label}</button>
-                                    ))}
-                                </div>
-                            </div>
-                            <button onClick={() => setShowOverview(!showOverview)} className={`px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border-2 ${showOverview ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-200 shadow-sm'}`}><Icons.Users size={16} /> {showOverview ? 'Overview' : 'My Schedule'}</button>
+                    <main className="p-4 max-w-5xl mx-auto">
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-6 p-1 bg-white rounded-2xl shadow-inner border border-slate-200">
+                            {TABS_CONFIG.map((tab, i) => (
+                                <button key={i} onClick={() => setActiveTab(i)} className={`px-6 py-3 rounded-xl text-[10px] font-black min-w-max transition-all ${activeTab === i ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400'}`}>{tab.label}</button>
+                            ))}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-                            <div className="lg:col-span-3 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-6">
-                                <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg"><Icons.MapPin size={20} /></div><span className="text-xs font-black text-slate-800 tracking-tighter uppercase">Onsite</span></div>
-                                <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center shadow-lg"><Icons.Globe size={20} /></div><span className="text-xs font-black text-slate-800 tracking-tighter uppercase">Online</span></div>
-                                <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-2xl border-2 border-slate-100 bg-slate-50 flex items-center justify-center text-slate-300">—</div><span className="text-xs font-black text-slate-400 tracking-tighter uppercase font-bold">ไม่เข้า</span></div>
-                            </div>
-                            <div className="bg-blue-600 text-white p-5 rounded-3xl flex items-center justify-between shadow-lg">
-                                <div><p className="text-[10px] font-black opacity-60 uppercase tracking-widest leading-none mb-1">Active Month</p><h3 className="text-lg font-black tracking-tight">{MONTHS_FULL[activeTab.month]}</h3></div>
-                                <button onClick={scrollToToday} className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all"><Icons.ArrowDown size={20} /></button>
-                            </div>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-black italic">SCHEDULE</h3>
+                            <button onClick={() => setIsEditMode(!isEditMode)} className={`px-8 py-3 rounded-2xl font-black text-xs tracking-widest transition-all shadow-lg ${isEditMode ? 'bg-amber-500 text-white' : 'bg-white border-2 border-slate-200'}`}>
+                                {isEditMode ? 'DONE & LOCK' : 'UNLOCK TO EDIT'}
+                            </button>
                         </div>
 
-                        <div className="relative overflow-hidden bg-white rounded-[2.5rem] shadow-2xl border border-slate-200">
-                            <div className="overflow-auto max-h-[55vh] no-scrollbar scroll-smooth">
-                                <table className="w-full border-collapse text-sm table-fixed min-w-[320px]">
+                        <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-center border-collapse">
                                     <thead>
-                                        <tr className="bg-slate-800 text-white">
-                                            <th className="sticky top-0 left-0 z-40 bg-slate-800 p-4 w-16 text-center border-r border-slate-700 shadow-[2px_0_5px_rgba(0,0,0,0.1)] font-black text-[10px] uppercase">Date</th>
-                                            <th className="sticky top-0 left-16 z-40 bg-slate-800 p-4 w-16 text-center border-r border-slate-700 shadow-[2px_0_5_rgba(0,0,0,0.1)] font-black text-[10px] uppercase">Day</th>
-                                            {displayedEmployees.map(emp => (
-                                                <th key={emp} className="sticky top-0 z-30 bg-slate-800 p-2 text-center border-r border-slate-700">
-                                                    <div className="text-[10px] font-black uppercase tracking-wider leading-tight">
-                                                        <div className="text-slate-500 text-[8px] mb-0.5 whitespace-nowrap">หมอ</div>
-                                                        <div className="truncate">{emp.replace('หมอ', '')}</div>
-                                                    </div>
-                                                </th>
+                                        <tr className="bg-slate-800 text-white text-[10px] uppercase font-black tracking-widest">
+                                            <th className="p-4 sticky left-0 bg-slate-800 z-10">Date</th>
+                                            {EMPLOYEES.filter(e => isAdmin || e === user).map(e => (
+                                                <th key={e} className="p-4 min-w-[100px] border-l border-slate-700">{e.replace('หมอ','')}</th>
                                             ))}
-                                            <th className="sticky top-0 right-0 z-30 bg-slate-800 p-4 w-28 text-center font-black text-[10px] uppercase">Note</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {daysData.map(({ day, dayOfWeek, dayName, dateKey, isToday }) => {
-                                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-                                            const isFriday = dayOfWeek === 5;
-                                            const isMonday = dayOfWeek === 1;
+                                        {[...Array(new Date(TABS_CONFIG[activeTab].year, TABS_CONFIG[activeTab].month + 1, 0).getDate())].map((_, i) => {
+                                            const day = i + 1;
+                                            const dateKey = `${TABS_CONFIG[activeTab].year}-${TABS_CONFIG[activeTab].month}-${day}`;
                                             return (
-                                                <tr key={dateKey} id={`row-${dateKey}`} className={`border-b transition-all ${isToday ? 'bg-amber-50/80 ring-2 ring-inset ring-amber-400 z-10' : isFriday ? 'bg-emerald-50/40' : isWeekend ? 'bg-slate-50' : 'bg-white hover:bg-blue-50/5'} ${isMonday ? 'border-t-4 border-t-slate-200' : ''}`}>
-                                                    <td className={`sticky left-0 z-20 p-4 text-center font-black border-r shadow-[2px_0_5px_rgba(0,0,0,0.02)] ${isToday ? 'bg-amber-100 text-amber-900 font-black' : isFriday ? 'bg-emerald-50' : isWeekend ? 'bg-slate-100' : 'bg-white'}`}>{day}</td>
-                                                    <td className={`sticky left-16 z-20 p-4 text-center text-[10px] font-black border-r shadow-[2px_0_5px_rgba(0,0,0,0.02)] ${isToday ? 'bg-amber-100' : isFriday ? 'bg-emerald-50 text-emerald-700' : isWeekend ? 'bg-slate-100 text-slate-400' : 'bg-white text-slate-500'}`}>{dayName.substring(0, 3)}</td>
-                                                    {displayedEmployees.map(emp => {
-                                                        const status = attendance[dateKey]?.[emp];
-                                                        const canModify = isAdmin || identifiedUser === emp;
+                                                <tr key={day} className="border-b border-slate-50 hover:bg-slate-50/50">
+                                                    <td className="p-4 font-black text-slate-400 sticky left-0 bg-white border-r">{day}</td>
+                                                    {EMPLOYEES.filter(e => isAdmin || e === user).map(e => {
+                                                        const status = attendance[dateKey]?.[e];
                                                         return (
-                                                            <td key={emp} className="p-2 text-center border-r">
-                                                                <button type="button" onClick={() => handleToggle(dateKey, emp)} className={`w-full h-12 rounded-2xl flex items-center justify-center transition-all shadow-sm active:scale-90 ${status === 'onsite' ? 'bg-blue-600 text-white ring-4 ring-blue-100' : status === 'online' ? 'bg-purple-600 text-white ring-4 ring-purple-100' : isEditMode && canModify ? 'bg-slate-100 border-2 border-slate-200 text-slate-300' : 'bg-slate-50/30 text-slate-100'} ${!canModify && isEditMode ? 'opacity-30 grayscale cursor-not-allowed' : ''}`}>
-                                                                    {status === 'onsite' && <Icons.MapPin size={22} />}
-                                                                    {status === 'online' && <Icons.Globe size={22} />}
-                                                                    {!status && <span className="text-[10px] font-black opacity-20">{(isEditMode && canModify) ? '+' : '—'}</span>}
+                                                            <td key={e} className="p-2">
+                                                                <button onClick={() => handleToggle(dateKey, e)} className={`w-full h-12 rounded-xl flex items-center justify-center transition-all ${status === 'onsite' ? 'bg-blue-600 text-white shadow-lg' : status === 'online' ? 'bg-purple-600 text-white shadow-lg' : 'bg-slate-100 text-slate-200 opacity-30'}`}>
+                                                                    {status === 'onsite' && <IconMapPin />}
+                                                                    {status === 'online' && <IconGlobe />}
+                                                                    {!status && <span className="text-[10px] font-black">+</span>}
                                                                 </button>
                                                             </td>
                                                         );
                                                     })}
-                                                    <td className="p-3 text-[9px] text-center font-black leading-tight italic uppercase tracking-tighter">
-                                                        {isFriday && <span className="text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">Weekly</span>}
-                                                        {isToday && !isFriday && <span className="text-amber-600 font-bold uppercase tracking-widest text-[8px]">Today</span>}
-                                                    </td>
                                                 </tr>
                                             );
                                         })}
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="bg-slate-100 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200">
-                                <div className="flex items-center gap-2">
-                                    <div className={`p-2 rounded-full ${isEditMode ? 'bg-amber-500 shadow-amber-500/20' : 'bg-slate-300'} text-white shadow-lg`}>{isEditMode ? <Icons.LockOpen size={16} /> : <Icons.Lock size={16} />}</div>
-                                    <div><p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1 text-slate-500">Mode Status</p><p className="text-xs font-bold text-slate-800 uppercase">{isEditMode ? 'Edit Mode Active' : 'View Only Mode'}</p></div>
-                                </div>
-                                <button type="button" onClick={() => setIsEditMode(!isEditMode)} className={`w-full sm:w-auto px-8 py-4 rounded-2xl text-[12px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 border-2 ${isEditMode ? 'bg-amber-500 text-white border-amber-500 shadow-xl scale-105' : 'bg-white text-slate-800 border-slate-200 hover:border-blue-500 shadow-md'}`}>
-                                    {isEditMode ? <Icons.Lock size={16} /> : <Icons.LockOpen size={16} />} {isEditMode ? 'Lock & Save' : 'Unlock to Edit'}
-                                </button>
-                            </div>
                         </div>
-                        <div className="mt-10 flex justify-center pb-10"><button onClick={() => setShowConfirmReset(true)} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 hover:text-rose-500 transition-colors flex items-center gap-2"><Icons.Trash2 size={12} /> Wipe Device Data</button></div>
                     </main>
-                    {toast && <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 z-[200] animate-bounce-in border border-white/20"><Icons.CheckCircle2 size={20} className="text-emerald-400" /><span className="text-sm font-black uppercase tracking-widest">{toast}</span></div>}
-                    {showConfirmReset && (
-                        <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center z-[100] p-4">
-                            <div className="bg-white rounded-[3rem] p-12 max-w-sm w-full shadow-2xl animate-scale-in border border-slate-100">
-                                <div className="w-24 h-24 bg-rose-50 text-rose-500 rounded-[2rem] flex items-center justify-center mb-6 mx-auto"><Icons.Trash2 size={48} /></div>
-                                <h3 className="text-2xl font-black text-center mb-3 text-slate-900 uppercase leading-none">Delete Data?</h3><p className="text-slate-400 text-center text-sm mb-10 font-medium leading-relaxed">ข้อมูลทั้งหมดจะถูกลบออกจากเบราว์เซอร์นี้อย่างถาวร</p>
-                                <div className="flex flex-col gap-3"><button onClick={() => { setAttendance({}); localStorage.removeItem(STORAGE_KEY); setShowConfirmReset(false); showToast("ล้างข้อมูลแล้ว"); }} className="w-full py-5 bg-rose-600 text-white rounded-[1.5rem] font-black shadow-lg shadow-rose-600/30 uppercase tracking-widest text-xs">Confirm Delete</button><button onClick={() => setShowConfirmReset(false)} className="w-full py-5 bg-slate-100 text-slate-500 rounded-[1.5rem] font-black uppercase tracking-widest text-xs">Cancel</button></div>
-                            </div>
+
+                    {loading && (
+                        <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-pulse">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                            <span className="text-[10px] font-black tracking-widest">SAVING TO CLOUD...</span>
                         </div>
                     )}
                 </div>
