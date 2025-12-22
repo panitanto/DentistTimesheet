@@ -2,35 +2,35 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dentist Timesheet Cloud V4</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dentist Timesheet V5 - Stable</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap');
-        body { font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; }
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .table-container { max-height: 70vh; overflow: auto; border: 1px solid #e2e8f0; border-radius: 1rem; position: relative; }
+        .table-container { max-height: 65vh; overflow: auto; border-radius: 1rem; border: 1px solid #e2e8f0; position: relative; }
         table { border-collapse: separate; border-spacing: 0; width: 100%; }
-        th, td { border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; padding: 10px; min-width: 80px; text-align: center; }
-        .sticky-left { position: sticky; left: 0; background: white; z-index: 20; min-width: 50px; border-right: 2px solid #e2e8f0; }
-        .sticky-top { position: sticky; top: 0; background: #0f172a; color: white; z-index: 30; }
+        th, td { border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; text-align: center; vertical-align: middle; }
+        .sticky-left { position: sticky; left: 0; background: white; z-index: 20; min-width: 55px; border-right: 2px solid #cbd5e1; }
+        .sticky-top { position: sticky; top: 0; background: #0f172a; color: white; z-index: 30; padding: 12px 8px; }
         .sticky-corner { position: sticky; top: 0; left: 0; z-index: 40; background: #0f172a; }
-        .today-row { background-color: #fefce8 !important; }
+        .bg-friday { background-color: #ecfdf5 !important; }
+        .bg-today { background-color: #fffbeb !important; border: 2px solid #f59e0b !important; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxBGCAtzlEzAeUPjGpD0eejUxNj2BZ0zuOxnEz6rNjdq-W5MMPkK4aWRHieY2voUk87-g/exec";
         const EMPLOYEES = ["หมอเบ็น", "หมอเบส", "หมออ๊อด", "หมอผิง", "หมอปุ้ม", "หมอตุล", "หมอท็อป", "หมอขิง", "หมอนัชชี่", "หมอป้อม"];
         const ADMIN_PASSWORD = "88888888";
-        const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
         
         const TABS_CONFIG = [
             { label: "ธ.ค. 68", month: 11, year: 2025 },
@@ -43,8 +43,8 @@
         ];
 
         const App = () => {
-            const [user, setUser] = useState(localStorage.getItem('user'));
-            const [isAdmin, setIsAdmin] = useState(localStorage.getItem('user') === 'Admin');
+            const [user, setUser] = useState(localStorage.getItem('user_v5'));
+            const [isAdmin, setIsAdmin] = useState(localStorage.getItem('user_v5') === 'Admin');
             const [attendance, setAttendance] = useState({});
             const [isEditMode, setIsEditMode] = useState(false);
             const [activeTabIdx, setActiveTabIdx] = useState(0);
@@ -65,13 +65,19 @@
                     const formatted = {};
                     data.slice(1).forEach(row => {
                         const [ts, dateKey, emp, status] = row;
-                        // แก้ปัญหาการแมตช์วันที่จาก Sheet
                         if (!formatted[dateKey]) formatted[dateKey] = {};
                         formatted[dateKey][emp] = (status === "null" || !status || status === "undefined") ? null : status;
                     });
                     setAttendance(formatted);
-                } catch (e) { console.error(e); }
+                    setTimeout(scrollToToday, 500);
+                } catch (e) { console.error("Sync Error:", e); }
                 setLoading(false);
+            };
+
+            const scrollToToday = () => {
+                const now = new Date();
+                const todayId = `row-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+                document.getElementById(todayId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             };
 
             const handleToggle = async (dateKey, emp) => {
@@ -82,8 +88,7 @@
                 const nextStatus = currentStatus === 'onsite' ? 'online' : (currentStatus === 'online' ? null : 'onsite');
 
                 setAttendance(prev => ({
-                    ...prev,
-                    [dateKey]: { ...(prev[dateKey] || {}), [emp]: nextStatus }
+                    ...prev, [dateKey]: { ...(prev[dateKey] || {}), [emp]: nextStatus }
                 }));
 
                 try {
@@ -92,23 +97,23 @@
                         mode: 'no-cors',
                         body: JSON.stringify({ dateKey, employee: emp, status: String(nextStatus) })
                     });
-                } catch (e) { console.error(e); }
+                } catch (e) { alert("Save Error"); }
             };
 
             if (!user) {
                 return (
                     <div className="flex items-center justify-center min-h-screen bg-slate-900 p-6">
-                        <div className="bg-white p-8 rounded-[2rem] w-full max-w-md shadow-2xl">
-                            <h1 className="text-2xl font-black mb-8 text-center">Dentist Timesheet</h1>
+                        <div className="bg-white p-8 rounded-[2.5rem] w-full max-w-md shadow-2xl">
+                            <h1 className="text-2xl font-black mb-8 text-center text-slate-800 tracking-tight">เลือกรายชื่อเข้าใช้งาน</h1>
                             <div className="grid grid-cols-2 gap-3">
                                 {EMPLOYEES.map(e => (
-                                    <button key={e} onClick={() => { setUser(e); localStorage.setItem('user', e); }} className="p-4 bg-slate-50 hover:bg-blue-600 hover:text-white font-bold rounded-2xl transition-all shadow-sm">{e}</button>
+                                    <button key={e} onClick={() => { setUser(e); localStorage.setItem('user_v5', e); }} className="p-4 bg-slate-50 hover:bg-blue-600 hover:text-white font-bold rounded-2xl transition-all shadow-sm">{e}</button>
                                 ))}
                             </div>
                             <button onClick={() => {
-                                const p = prompt("รหัสผ่านผู้ดูแลระบบ");
-                                if(p === ADMIN_PASSWORD) { setUser('Admin'); setIsAdmin(true); localStorage.setItem('user', 'Admin'); }
-                            }} className="w-full mt-8 text-slate-300 font-bold text-[10px] uppercase tracking-widest text-center">Admin Access</button>
+                                const p = prompt("รหัส Admin");
+                                if(p === ADMIN_PASSWORD) { setUser('Admin'); setIsAdmin(true); localStorage.setItem('user_v5', 'Admin'); }
+                            }} className="w-full mt-8 text-slate-300 font-bold text-[10px] uppercase tracking-widest text-center border-t pt-4">Admin Login</button>
                         </div>
                     </div>
                 );
@@ -116,73 +121,78 @@
 
             const activeTab = TABS_CONFIG[activeTabIdx];
             const daysInMonth = new Date(activeTab.year, activeTab.month + 1, 0).getDate();
-            // จำกัดการแสดงผลรายชื่อ: Admin เห็นทุกคน / หมอเห็นแค่ตัวเอง
             const visibleEmployees = isAdmin ? EMPLOYEES : [user];
 
             return (
-                <div className="min-h-screen bg-slate-50 pb-10">
+                <div className="min-h-screen bg-slate-50 pb-12">
                     <header className="bg-slate-900 text-white p-4 sticky top-0 z-[100] flex justify-between items-center shadow-lg">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${isAdmin ? 'bg-amber-500' : 'bg-blue-600'}`}>{isAdmin ? 'AD' : 'DR'}</div>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${isAdmin ? 'bg-amber-500 text-slate-900' : 'bg-blue-600'}`}>{isAdmin ? 'AD' : 'DR'}</div>
                             <div>
-                                <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase leading-none mb-1">{isAdmin ? 'ADMIN' : 'DOCTOR PROFILE'}</p>
+                                <p className="text-[9px] text-slate-400 font-black tracking-widest uppercase leading-none mb-1">{isAdmin ? 'ADMINISTRATOR' : 'DOCTOR PROFILE'}</p>
                                 <h2 className="text-sm font-black">{user}</h2>
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={fetchData} className="p-2 px-3 bg-slate-800 rounded-lg text-[10px] font-bold border border-slate-700 uppercase">Refresh</button>
-                            <button onClick={() => { localStorage.clear(); location.reload(); }} className="p-2 px-3 bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-lg text-[10px] font-bold uppercase">Logout</button>
+                            <button onClick={fetchData} className="p-2 px-3 bg-slate-800 rounded-lg text-[10px] font-black border border-slate-700 uppercase">Refresh</button>
+                            <button onClick={() => { localStorage.clear(); location.reload(); }} className="p-2 px-3 bg-rose-500/20 text-rose-500 border border-rose-500/30 rounded-lg text-[10px] font-black uppercase">Logout</button>
                         </div>
                     </header>
 
-                    <main className="max-w-7xl mx-auto p-3">
-                        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 p-2 bg-white rounded-xl shadow-sm border">
+                    <main className="max-w-7xl mx-auto p-4">
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4 p-2 bg-white rounded-2xl shadow-sm border border-slate-200">
                             {TABS_CONFIG.map((tab, i) => (
-                                <button key={i} onClick={() => setActiveTabIdx(i)} className={`px-4 py-2 rounded-lg text-[10px] font-black min-w-max transition-all ${activeTabIdx === i ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>{tab.label}</button>
+                                <button key={i} onClick={() => setActiveTabIdx(i)} className={`px-5 py-2.5 rounded-xl text-[10px] font-black min-w-max transition-all ${activeTabIdx === i ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>{tab.label}</button>
                             ))}
                         </div>
 
-                        <div className="flex justify-between items-center mb-4 gap-2">
-                             <div className="flex gap-4 items-center bg-white px-4 py-3 rounded-xl border shadow-sm">
-                                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-blue-600 rounded-full"></div><span className="text-[10px] font-black uppercase">Onsite</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-purple-600 rounded-full"></div><span className="text-[10px] font-black uppercase">Online</span></div>
-                             </div>
-                             <button onClick={() => setIsEditMode(!isEditMode)} className={`flex-1 md:flex-none px-6 py-4 rounded-xl font-black text-[10px] tracking-widest shadow-lg ${isEditMode ? 'bg-amber-500 text-white ring-4 ring-amber-500/20' : 'bg-white border text-slate-600'}`}>
+                        <div className="flex justify-between items-center mb-6 gap-3">
+                            <div className="flex gap-4 items-center bg-white px-5 py-4 rounded-2xl border border-slate-200 shadow-sm grow">
+                                <div className="flex items-center gap-2"><div className="w-4 h-4 bg-blue-600 rounded-full shadow-lg shadow-blue-200"></div><span className="text-[10px] font-black uppercase text-slate-600">Onsite</span></div>
+                                <div className="flex items-center gap-2"><div className="w-4 h-4 bg-purple-600 rounded-full shadow-lg shadow-purple-200"></div><span className="text-[10px] font-black uppercase text-slate-600">Online</span></div>
+                            </div>
+                            <button onClick={() => setIsEditMode(!isEditMode)} className={`px-8 py-4 rounded-2xl font-black text-[10px] tracking-widest transition-all shadow-xl min-w-[160px] ${isEditMode ? 'bg-amber-500 text-white ring-4 ring-amber-500/20' : 'bg-white border-2 border-slate-200 text-slate-600'}`}>
                                 {isEditMode ? '🔒 LOCK & SAVE' : '🔓 UNLOCK TO EDIT'}
                             </button>
                         </div>
 
-                        <div className="table-container bg-white shadow-xl">
+                        <div className="table-container bg-white shadow-2xl overflow-hidden">
                             <table>
                                 <thead>
-                                    <tr>
-                                        <th className="sticky-corner text-[9px] uppercase font-black">Date</th>
+                                    <tr className="text-[10px] uppercase font-black tracking-widest">
+                                        <th className="sticky-corner p-4 min-w-[60px]">Date</th>
                                         {visibleEmployees.map(e => (
-                                            <th key={e} className="sticky-top text-[9px] uppercase font-black">{e.replace('หมอ','')}</th>
+                                            <th key={e} className="sticky-top p-4 border-l border-slate-700">{e.replace('หมอ','')}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {[...Array(daysInMonth)].map((_, i) => {
                                         const day = i + 1;
-                                        // ปรับ Format วันที่ให้ตรงกับที่บันทึกใน Sheet: YYYY-MM-DD
-                                        const dateKey = `${activeTab.year}-${String(activeTab.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                         const dateObj = new Date(activeTab.year, activeTab.month, day);
+                                        const dateKey = `${activeTab.year}-${String(activeTab.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                                         const isToday = new Date().toDateString() === dateObj.toDateString();
                                         const isFriday = dateObj.getDay() === 5;
+                                        const rowId = `row-${activeTab.year}-${activeTab.month}-${day}`;
 
                                         return (
-                                            <tr key={day} className={isToday ? 'today-row' : ''}>
-                                                <td className={`sticky-left font-black text-xs ${isToday ? 'text-blue-600' : 'text-slate-400'}`}>
+                                            <tr key={day} id={rowId} className={`${isToday ? 'bg-today ring-2 ring-inset ring-amber-400' : isFriday ? 'bg-friday' : 'bg-white hover:bg-slate-50'}`}>
+                                                <td className={`sticky-left p-4 font-black text-sm border-r-2 border-slate-100 ${isToday ? 'bg-amber-100 text-amber-700' : isFriday ? 'bg-emerald-50 text-emerald-700' : 'text-slate-400'}`}>
                                                     {day}
-                                                    {isFriday && <div className="text-[7px] text-emerald-600 mt-0.5 font-black uppercase">Fri</div>}
+                                                    {isFriday && <div className="text-[7px] text-emerald-600 mt-1 uppercase font-black">Weekly</div>}
                                                 </td>
                                                 {visibleEmployees.map(e => {
                                                     const status = attendance[dateKey]?.[e];
                                                     return (
-                                                        <td key={e} className="p-1">
-                                                            <button onClick={() => handleToggle(dateKey, e)} className={`w-full h-12 rounded-lg transition-all flex items-center justify-center ${status === 'onsite' ? 'bg-blue-600 text-white shadow-md' : status === 'online' ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-50 text-slate-100'}`}>
-                                                                {status ? <span className="text-[9px] font-black uppercase tracking-tighter">{status}</span> : <span className="text-xs">+</span>}
+                                                        <td key={e} className="p-1 border-r border-slate-50">
+                                                            <button 
+                                                                onClick={() => handleToggle(dateKey, e)} 
+                                                                className={`w-full h-12 rounded-xl transition-all flex items-center justify-center font-black text-[10px] 
+                                                                ${status === 'onsite' ? 'bg-blue-600 text-white shadow-lg' : 
+                                                                  status === 'online' ? 'bg-purple-600 text-white shadow-lg' : 
+                                                                  isEditMode ? 'bg-slate-100 border-2 border-dashed border-slate-200 text-slate-300' : 'bg-slate-50/50 text-slate-100'}`}
+                                                            >
+                                                                {status ? status.toUpperCase() : (isEditMode ? '+' : '')}
                                                             </button>
                                                         </td>
                                                     );
@@ -196,9 +206,9 @@
                     </main>
 
                     {loading && (
-                        <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 z-[200]">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                            <span className="text-[10px] font-black tracking-widest uppercase">Loading Data...</span>
+                        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 z-[200] border border-white/20">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                            <span className="text-[10px] font-black tracking-widest uppercase">Syncing Cloud Data...</span>
                         </div>
                     )}
                 </div>
