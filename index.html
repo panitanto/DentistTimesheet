@@ -61,13 +61,17 @@
                     const res = await fetch(`${GOOGLE_SCRIPT_URL}?t=${Date.now()}`);
                     const data = await res.json();
                     const formatted = {};
-                    data.slice(1).forEach(row => {
-                        const [ts, dateKey, emp, status] = row;
-                        if (dateKey && emp) {
-                            if (!formatted[dateKey]) formatted[dateKey] = {};
-                            formatted[dateKey][emp] = (status === "null" || !status || status === "undefined") ? null : status;
-                        }
-                    });
+                   data.slice(1).forEach(row => {
+    let [ts, dateKey, emp, status] = row; // เปลี่ยน const เป็น let
+    
+    if (dateKey && emp) {
+        // เพิ่มบรรทัดนี้: แปลงวันที่ให้เป็นรูปแบบ YYYY-MM-DD เสมอ
+        dateKey = String(dateKey).split('T')[0]; 
+        
+        if (!formatted[dateKey]) formatted[dateKey] = {};
+        formatted[dateKey][emp] = (status === "null" || !status || status === "undefined") ? null : status;
+    }
+});
                     setAttendance(formatted);
                     setTimeout(scrollToToday, 500);
                 } catch (e) { alert("ดึงข้อมูลไม่สำเร็จ โปรดเช็คการตั้งค่า Deployment ใน Sheet"); }
@@ -193,6 +197,7 @@
     </script>
 </body>
 </html>
+
 
 
 
